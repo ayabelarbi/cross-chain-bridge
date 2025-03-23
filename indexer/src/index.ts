@@ -1,33 +1,28 @@
 import { ethers } from 'ethers';
 import * as dotenv from 'dotenv';
-import { createLogger, format, transports } from 'winston';
+import winston from 'winston';
+import { bridgeAbi } from './abi/bridge';
 
 dotenv.config();
 
 // Configure logger
-const logger = createLogger({
-  format: format.combine(
-    format.timestamp(),
-    format.json()
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
   ),
   transports: [
-    new transports.Console(),
-    new transports.File({ filename: 'indexer.log' })
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: 'indexer.log' })
   ]
 });
 
-// Bridge ABI (only the events we need)
-const bridgeAbi = [
-  "event Deposit(address indexed token, address indexed from, address indexed to, uint256 amount, uint256 nonce)",
-  "event Distribution(address indexed token, address indexed to, uint256 amount, uint256 nonce)",
-  "function distribute(address token, address recipient, uint256 amount, uint256 depositNonce)"
-];
-
-// Configuration
+// Chain configuration
 const config = {
   holesky: {
     rpc: process.env.HOLESKY_RPC_URL,
-    bridgeAddress: "0x17538446a55811e4B35a9F8c4283810CcC6FecFf",
+    bridgeAddress: "0x57c30655BC162a0B1fB1964057d0Efea3D5E763e",
     confirmations: 5
   },
   base: {
@@ -49,23 +44,26 @@ class BridgeIndexer {
     this.holeskyProvider = new ethers.JsonRpcProvider(config.holesky.rpc);
     this.baseProvider = new ethers.JsonRpcProvider(config.base.rpc);
 
-    // Initialize contracts
+    // Initialize contracts with ABI
     this.holeskyBridge = new ethers.Contract(config.holesky.bridgeAddress, bridgeAbi, this.holeskyProvider);
     this.baseBridge = new ethers.Contract(config.base.bridgeAddress, bridgeAbi, this.baseProvider);
 
     // Initialize wallet for signing transactions
-    this.wallet = new ethers.Wallet(process.env.PRIVATE_KEY || "", this.holeskyProvider);
+    if (!process.env.PRIVATE_KEY) {
+      throw new Error("PRIVATE_KEY not found in environment variables");
+    }
+    this.wallet = new ethers.Wallet(process.env.PRIVATE_KEY, this.holeskyProvider);
   }
 
   async start() {
     logger.info("Starting bridge indexer...");
 
     // Listen for Deposit events on Holesky
-    this.holeskyBridge.on("Deposit", async (token, from, to, amount, nonce, event) => {
+    this.holeskyBridge.on("Deposit", async (token: string, from: string, to: string, amount: bigint, nonce: bigint, event: any) => {
       logger.info(`New deposit on Holesky: ${from} -> ${to}, Amount: ${amount}, Nonce: ${nonce}`);
       
       // Wait for confirmations
-      await event.getTransaction().then(tx => tx?.wait(config.holesky.confirmations));
+      await event.getTransaction().then((tx: any) => tx?.wait(config.holesky.confirmations));
       
       // Process the deposit on Base
       try {
@@ -78,11 +76,11 @@ class BridgeIndexer {
     });
 
     // Listen for Deposit events on Base
-    this.baseBridge.on("Deposit", async (token, from, to, amount, nonce, event) => {
+    this.baseBridge.on("Deposit", async (token: string, from: string, to: string, amount: bigint, nonce: bigint, event: any) => {
       logger.info(`New deposit on Base: ${from} -> ${to}, Amount: ${amount}, Nonce: ${nonce}`);
       
       // Wait for confirmations
-      await event.getTransaction().then(tx => tx?.wait(config.base.confirmations));
+      await event.getTransaction().then((tx: any) => tx?.wait(config.base.confirmations));
       
       // Process the deposit on Holesky
       try {
@@ -94,13 +92,13 @@ class BridgeIndexer {
       }
     });
 
-    logger.info("Indexer is running and listening for events...");
+    logger.info("Bridge indexer started successfully");
   }
 }
 
 // Start the indexer
 const indexer = new BridgeIndexer();
-indexer.start().catch(error => {
-  logger.error("Fatal error:", error);
+indexer.start().catch((error) => {
+  logger.error("Failed to start indexer:", error);
   process.exit(1);
 });

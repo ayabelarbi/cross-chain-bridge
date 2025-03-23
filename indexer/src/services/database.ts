@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import { BigNumber } from 'ethers';
 
 const prisma = new PrismaClient();
 
