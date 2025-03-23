@@ -1,4 +1,19 @@
-## Foundry
+## Informations 
+
+### Deployed Contracts ( HOLESKY )
+  TokenBridge deployed to: 0x17538446a55811e4B35a9F8c4283810CcC6FecFf
+  TestToken deployed to: 0x57c30655BC162a0B1fB1964057d0Efea3D5E763e
+  TestToken added to supported tokens
+
+### Deployed Contracts ( BASE )
+  TokenBridge deployed to: 0xf72A91A5F434b354fd660f31C88598fdf5f410Ee
+  TestToken deployed to: 0x4059580E0a27b3DB46Fb7962a626AC6b11b567D1
+  TestToken added to supported tokens
+
+Holesky Bridge Contract: 0x17538446a55811e4B35a9F8c4283810CcC6FecFf
+Base Bridge Contract: 0xf72A91A5F434b354fd660f31C88598fdf5f410Ee
+
+## Foundry Manual
 
 **Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
 
