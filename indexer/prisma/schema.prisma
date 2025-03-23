@@ -1,0 +1,57 @@
+// This is your Prisma schema file
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Track bridge deposits
+model BridgeDeposit {
+  id              String   @id @default(uuid())
+  sourceChain     String   // "holesky" or "base"
+  targetChain     String   // "base" or "holesky"
+  depositTxHash   String   @unique
+  token           String   // token contract address
+  sender          String   // sender address
+  recipient       String   // recipient address
+  amount          String   // amount in wei (as string due to BigInt)
+  nonce          BigInt
+  blockNumber    BigInt
+  status         String   // "pending", "confirmed", "distributed", "failed"
+  confirmations  Int      @default(0)
+  distributionTxHash String? // hash of the distribution transaction
+  error          String?  // error message if failed
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status])
+  @@index([sourceChain, status])
+  @@index([nonce, sourceChain])
+}
+
+// Track supported tokens
+model SupportedToken {
+  id            String   @id @default(uuid())
+  chain         String   // "holesky" or "base"
+  tokenAddress  String
+  symbol        String
+  decimals      Int
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([chain, tokenAddress])
+}
+
+// Track chain metadata
+model ChainMetadata {
+  id                String   @id @default(uuid())
+  chain             String   @unique // "holesky" or "base"
+  lastBlockScanned  BigInt
+  isActive          Boolean  @default(true)
+  requiredConfirmations Int
+  updatedAt         DateTime @updatedAt
+}
