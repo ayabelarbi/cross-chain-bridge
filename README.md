@@ -29,7 +29,7 @@ A secure and efficient cross-chain bridge system that enables token transfers be
 
 1. Clone the repository:
 ```bash
-git clone [<repository-url>](https://github.com/ayabelarbi/cross-chain-bridge)
+git clone https://github.com/ayabelarbi/cross-chain-bridge
 cd cross-chain-bridge
 ```
 
